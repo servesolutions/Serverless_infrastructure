@@ -80,30 +80,31 @@ resource "aws_s3_bucket" "lambda_bucket" {
 }
 
 
-resource "aws_iam_role" "PowerOfMathRole" {
-  name = "PowerOfMathRole"
+# resource "aws_iam_role" "PowerOfMathRole" {
+#   name = "PowerOfMathRole"
 
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-POLICY
-}
+#   assume_role_policy = <<POLICY
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Principal": {
+#         "Service": "lambda.amazonaws.com"
+#       },
+#       "Action": "sts:AssumeRole"
+#     }
+#   ]
+# }
+# POLICY
+# }
 
 resource "aws_iam_role_policy_attachment" "PowerOfMath_policy" {
   role       = aws_iam_role.PowerOfMathRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", 
                 "arn:aws:iam::aws:policy/service-role/PowerOfMathDynamoPolicy",
-                "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+                "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+                "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
 resource "aws_lambda_function" "PowerOfMathfunction" {
@@ -124,4 +125,36 @@ resource "aws_lambda_function" "PowerOfMathfunction" {
 resource "aws_dynamodb_table" "PowerofMath" {
   tags = merge(var.tags, {})
   name = "PowerofMath"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "partition_key"
+
+  attribute {
+    name = "partition_key"
+    type = "S"
+  }
+}
+
+resource "aws_dynamodb_table" "PowerOfMathDatabase" {
+  name           = "PowerOfMathDatabase"
+  billing_mode   = "PROVISIONED"
+  read_capacity  = 30
+  write_capacity = 30
+  hash_key       = "Id"
+  range_key      = "Name"
+
+  attribute {
+    name = "UserId"
+    type = "S"
+  }
+
+  attribute {
+    name = "Name"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "TimeToExist"
+    enabled        = false
+  }
+
 }
